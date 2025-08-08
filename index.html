@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#6200ea">
+  <link rel="manifest" href="manifest.json">
+  <title>AuDHD Routine Helper</title>
+  <style>
+    body { font-family: sans-serif; max-width: 600px; margin: auto; padding: 1rem; }
+    h1 { color: #6200ea; }
+    .task { display: flex; align-items: center; margin: 0.5rem 0; }
+    .task input { margin-right: 0.5rem; }
+    textarea { width: 100%; height: 100px; margin-top: 1rem; }
+    button { padding: 0.5rem 1rem; margin-top: 0.5rem; }
+  </style>
+</head>
+<body>
+  <h1>AuDHD Routine Helper</h1>
+
+  <h2>Daily Routine</h2>
+  <div id="taskList"></div>
+  <button id="resetBtn">Reset for Tomorrow</button>
+
+  <h2>Notes</h2>
+  <textarea id="notes" placeholder="Write thoughts, reminders..."></textarea>
+  <button id="saveBtn">Save Notes</button>
+
+  <script>
+    const defaultTasks = [
+      "Morning meds",
+      "Breakfast",
+      "Check calendar",
+      "Top 3 priorities",
+      "Lunch",
+      "Afternoon check-in",
+      "Wrap up & tomorrow plan",
+      "Evening meds"
+    ];
+
+    const taskList = document.getElementById('taskList');
+    const notes = document.getElementById('notes');
+    const saveBtn = document.getElementById('saveBtn');
+    const resetBtn = document.getElementById('resetBtn');
+
+    function loadTasks() {
+      const saved = JSON.parse(localStorage.getItem('tasks')) || defaultTasks.map(t => ({text: t, done: false}));
+      taskList.innerHTML = '';
+      saved.forEach((task, i) => {
+        const div = document.createElement('div');
+        div.className = 'task';
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = task.done;
+        checkbox.addEventListener('change', () => {
+          saved[i].done = checkbox.checked;
+          localStorage.setItem('tasks', JSON.stringify(saved));
+        });
+        const label = document.createElement('label');
+        label.textContent = task.text;
+        div.appendChild(checkbox);
+        div.appendChild(label);
+        taskList.appendChild(div);
+      });
+    }
+
+    function loadNotes() {
+      notes.value = localStorage.getItem('notes') || '';
+    }
+
+    saveBtn.addEventListener('click', () => {
+      localStorage.setItem('notes', notes.value);
+      alert('Notes saved!');
+    });
+
+    resetBtn.addEventListener('click', () => {
+      localStorage.removeItem('tasks');
+      loadTasks();
+    });
+
+    loadTasks();
+    loadNotes();
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js');
+    }
+
+    // Simple reminder notification
+    if ('Notification' in window) {
+      Notification.requestPermission().then(permission => {
+        if (permission === 'granted') {
+          setInterval(() => {
+            new Notification("Routine Check", { body: "Have you checked your tasks?" });
+          }, 1000 * 60 * 60 * 3); // every 3 hours
+        }
+      });
+    }
+  </script>
+</body>
+</html>
